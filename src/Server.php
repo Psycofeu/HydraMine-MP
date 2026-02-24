@@ -977,14 +977,7 @@ class Server{
 
 			$this->maxPlayers = $this->configGroup->getConfigInt(ServerProperties::MAX_PLAYERS, self::DEFAULT_MAX_PLAYERS);
 
-			$this->onlineMode = false;
-			if($this->onlineMode){
-				$this->logger->info($this->language->translate(KnownTranslationFactory::pocketmine_server_auth_enabled()));
-			}else{
-				$this->logger->warning($this->language->translate(KnownTranslationFactory::pocketmine_server_auth_disabled()));
-				$this->logger->warning($this->language->translate(KnownTranslationFactory::pocketmine_server_authWarning()));
-				$this->logger->warning($this->language->translate(KnownTranslationFactory::pocketmine_server_authProperty_disabled()));
-			}
+			$this->onlineMode = true;
 
 			$this->authKeyProvider = new AuthKeyProvider(new \PrefixedLogger($this->logger, "Minecraft Auth Key Provider"), $this->asyncPool);
 
