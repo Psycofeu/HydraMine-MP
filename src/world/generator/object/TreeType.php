@@ -35,6 +35,7 @@ use pocketmine\utils\LegacyEnumShimTrait;
  * @method static TreeType JUNGLE()
  * @method static TreeType OAK()
  * @method static TreeType SPRUCE()
+ * @method static TreeType CHERRY()
  */
 enum TreeType{
 	use LegacyEnumShimTrait;
@@ -48,6 +49,7 @@ enum TreeType{
 	case CRIMSON;
 	case WARPED;
 	case AZALEA;
+	case CHERRY;
 	//TODO: cherry blossom, mangrove
 	//TODO: perhaps huge mushrooms should be here too???
 
@@ -62,6 +64,7 @@ enum TreeType{
 			self::CRIMSON => "Crimson",
 			self::WARPED => "Warped",
 			self::AZALEA => "Azalea",
+			self::CHERRY => "Cherry",
 		};
 	}
 }

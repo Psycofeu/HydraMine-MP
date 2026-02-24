@@ -171,6 +171,7 @@ final class VanillaBlocks{
 	private static WallHangingSign $_mCHERRY_WALL_HANGING_SIGN;
 	private static WallSign $_mCHERRY_WALL_SIGN;
 	private static Wood $_mCHERRY_WOOD;
+	private static Sapling $_mCHERRY_SAPPLING;
 	private static Chest $_mCHEST;
 	private static ChiseledBookshelf $_mCHISELED_BOOKSHELF;
 	private static Copper $_mCHISELED_COPPER;
@@ -1004,6 +1005,7 @@ final class VanillaBlocks{
 			"cherry_wall_hanging_sign" => fn(WallHangingSign $v) => self::$_mCHERRY_WALL_HANGING_SIGN = $v,
 			"cherry_wall_sign" => fn(WallSign $v) => self::$_mCHERRY_WALL_SIGN = $v,
 			"cherry_wood" => fn(Wood $v) => self::$_mCHERRY_WOOD = $v,
+			"cherry_sapling" => fn(Sapling $v) => self::$_mCHERRY_SAPPLING = $v,
 			"chest" => fn(Chest $v) => self::$_mCHEST = $v,
 			"chiseled_bookshelf" => fn(ChiseledBookshelf $v) => self::$_mCHISELED_BOOKSHELF = $v,
 			"chiseled_copper" => fn(Copper $v) => self::$_mCHISELED_COPPER = $v,
@@ -2372,6 +2374,12 @@ final class VanillaBlocks{
 		if(!isset(self::$_mCHERRY_WOOD)){ self::init(); }
 		return clone self::$_mCHERRY_WOOD;
 	}
+
+	public static function CHERRY_SAPLING() : Sapling{
+		if(!isset(self::$_mCHERRY_SAPPLING)){ self::init(); }
+		return clone self::$_mCHERRY_SAPPLING;
+	}
+
 
 	public static function CHEST() : Chest{
 		if(!isset(self::$_mCHEST)){ self::init(); }
