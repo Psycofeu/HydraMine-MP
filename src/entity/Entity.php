@@ -130,6 +130,7 @@ abstract class Entity{
 
 	public AxisAlignedBB $boundingBox;
 	public bool $onGround = false;
+	public Vector3 $delta;
 
 	public EntitySizeInfo $size;
 
@@ -811,7 +812,7 @@ abstract class Entity{
 				//the teleported player sees themselves at the correct position), and does nothing whatsoever for
 				//non-player entities (movement is still interpolated). Both of these are client bugs.
 				//See https://github.com/pmmp/PocketMine-MP/issues/4394
-				($this->onGround ? MoveActorAbsolutePacket::FLAG_GROUND : 0)
+			($this->onGround ? MoveActorAbsolutePacket::FLAG_GROUND : 0)
 			)
 		)]);
 	}

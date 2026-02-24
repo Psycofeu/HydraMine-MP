@@ -42,14 +42,6 @@ final class CropGrowthHelper{
 		//NOOP
 	}
 
-	/**
-	 * Returns the speed at which this crop will grow, depending on its surroundings.
-	 * The default is once every 26 random ticks.
-	 *
-	 * Things which influence this include nearby farmland (bonus for hydrated farmland) and the position of other
-	 * nearby crops of the same type (nearby crops of the same type will negatively influence growth speed unless
-	 * planted in rows and properly spaced apart).
-	 */
 	public static function calculateMultiplier(Block $block) : float{
 		$result = 1;
 
@@ -96,7 +88,6 @@ final class CropGrowthHelper{
 			}
 		}
 
-		//crops can be arranged in rows, but the rows must not cross and must be spaced apart by at least one block
 		if($improperArrangement){
 			$result /= self::IMPROPER_ARRANGEMENT_DIVISOR;
 		}
@@ -104,17 +95,7 @@ final class CropGrowthHelper{
 		return $result;
 	}
 
-	public static function hasEnoughLight(Block $block, int $minLevel = self::MIN_LIGHT_LEVEL) : bool{
-		$position = $block->getPosition();
-		$world = $position->getWorld();
-
-		//crop growth is not affected by time of day since 1.11 or so
-		return $world->getPotentialLightAt($position->x, $position->y, $position->z) >= $minLevel;
-	}
-
 	public static function canGrow(Block $block) : bool{
-		//while it may be tempting to use mt_rand(0, 25) < multiplier, this would make crops grow a bit faster than
-		//vanilla in most cases due to the remainder of 25 / multiplier not being discarded
-		return mt_rand(0, (int) (25 / self::calculateMultiplier($block))) === 0 && self::hasEnoughLight($block);
+		return mt_rand(0, (int) (25 / self::calculateMultiplier($block))) === 0;
 	}
 }

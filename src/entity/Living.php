@@ -62,7 +62,6 @@ use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use pocketmine\player\Player;
 use pocketmine\timings\Timings;
 use pocketmine\utils\Binary;
-use pocketmine\utils\Limits;
 use pocketmine\utils\Utils;
 use pocketmine\world\sound\BurpSound;
 use pocketmine\world\sound\EntityLandSound;
@@ -190,14 +189,12 @@ abstract class Living extends Entity{
 					continue;
 				}
 
-				$duration = $e->getInt(self::TAG_EFFECT_DURATION);
 				$this->effectManager->add(new EffectInstance(
 					$effect,
-					$duration === -1 ? Limits::INT32_MAX : $duration,
+					$e->getInt(self::TAG_EFFECT_DURATION),
 					Binary::unsignByte($e->getByte(self::TAG_EFFECT_AMPLIFIER)),
 					$e->getByte(self::TAG_EFFECT_SHOW_PARTICLES, 1) !== 0,
-					$e->getByte(self::TAG_EFFECT_AMBIENT, 0) !== 0,
-					infinite: $duration === -1
+					$e->getByte(self::TAG_EFFECT_AMBIENT, 0) !== 0
 				));
 			}
 		}
@@ -324,7 +321,7 @@ abstract class Living extends Entity{
 				$effects[] = CompoundTag::create()
 					->setByte(self::TAG_EFFECT_ID, EffectIdMap::getInstance()->toId($effect->getType()))
 					->setByte(self::TAG_EFFECT_AMPLIFIER, Binary::signByte($effect->getAmplifier()))
-					->setInt(self::TAG_EFFECT_DURATION, $effect->isInfinite() ? -1 : $effect->getDuration())
+					->setInt(self::TAG_EFFECT_DURATION, $effect->getDuration())
 					->setByte(self::TAG_EFFECT_AMBIENT, $effect->isAmbient() ? 1 : 0)
 					->setByte(self::TAG_EFFECT_SHOW_PARTICLES, $effect->isVisible() ? 1 : 0);
 			}
@@ -452,9 +449,10 @@ abstract class Living extends Entity{
 			}
 			$source->setModifier(-$this->lastDamageCause->getBaseDamage(), EntityDamageEvent::MODIFIER_PREVIOUS_DAMAGE_COOLDOWN);
 		}
-		if($source->canBeReducedByArmor()){
-			//MCPE uses the same system as PC did pre-1.9
-			$source->setModifier(-$source->getFinalDamage() * $this->getArmorPoints() * 0.04, EntityDamageEvent::MODIFIER_ARMOR);
+		$armorPoint = $this->getArmorPoints();
+		if($armorPoint >= 1){
+			$modifier = -$source->getFinalDamage() * $armorPoint / ($armorPoint + 7);
+			$source->setModifier($modifier, EntityDamageEvent::MODIFIER_ARMOR);
 		}
 
 		$cause = $source->getCause();
@@ -488,25 +486,7 @@ abstract class Living extends Entity{
 			$this->damageArmor($source->getBaseDamage());
 		}
 
-		if($source instanceof EntityDamageByEntityEvent && ($attacker = $source->getDamager()) !== null){
-			$damage = 0;
-			foreach($this->armorInventory->getContents() as $k => $item){
-				if($item instanceof Armor && ($thornsLevel = $item->getEnchantmentLevel(VanillaEnchantments::THORNS())) > 0){
-					if(mt_rand(0, 99) < $thornsLevel * 15){
-						$this->damageItem($item, 3);
-						$damage += ($thornsLevel > 10 ? $thornsLevel - 10 : 1 + mt_rand(0, 3));
-					}else{
-						$this->damageItem($item, 1); //thorns causes an extra +1 durability loss even if it didn't activate
-					}
-
-					$this->armorInventory->setItem($k, $item);
-				}
-			}
-
-			if($damage > 0){
-				$attacker->attack(new EntityDamageByEntityEvent($this, $attacker, EntityDamageEvent::CAUSE_MAGIC, $damage));
-			}
-
+		if($source instanceof EntityDamageByEntityEvent){
 			if($source->getModifier(EntityDamageEvent::MODIFIER_ARMOR_HELMET) < 0){
 				$helmet = $this->armorInventory->getHelmet();
 				if($helmet instanceof Armor){
@@ -563,11 +543,9 @@ abstract class Living extends Entity{
 		}
 
 		if($source instanceof EntityDamageByEntityEvent && (
-			$source->getCause() === EntityDamageEvent::CAUSE_BLOCK_EXPLOSION ||
-			$source->getCause() === EntityDamageEvent::CAUSE_ENTITY_EXPLOSION)
+				$source->getCause() === EntityDamageEvent::CAUSE_BLOCK_EXPLOSION ||
+				$source->getCause() === EntityDamageEvent::CAUSE_ENTITY_EXPLOSION)
 		){
-			//TODO: knockback should not just apply for entity damage sources
-			//this doesn't matter for TNT right now because the PrimedTNT entity is considered the source, not the block.
 			$base = $source->getKnockBack();
 			$source->setKnockBack($base - min($base, $base * $this->getHighestArmorEnchantmentLevel(VanillaEnchantments::BLAST_PROTECTION()) * 0.15));
 		}
@@ -973,7 +951,7 @@ abstract class Living extends Entity{
 		$packedEffectsCount = 0;
 		foreach ($visibleEffects as $effectId => $isAmbient) {
 			$effectsData = ($effectsData << 7) |
-				(($effectId & 0x3f) << 1) | //Why not use 7 bits instead of only 6? mojang...
+				(($effectId & 0x3f) << 1) |
 				($isAmbient ? 1 : 0);
 
 			if (++$packedEffectsCount >= 8) {

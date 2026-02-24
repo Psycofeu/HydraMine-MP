@@ -143,9 +143,9 @@ namespace pocketmine {
 		$wantedVersionLock = "0.3";
 		$wantedVersionMin = "$wantedVersionLock.0";
 		if($chunkutils2_version !== false && (
-			version_compare($chunkutils2_version, $wantedVersionMin) < 0 ||
-			preg_match("/^" . preg_quote($wantedVersionLock, "/") . "\.\d+(?:-dev)?$/", $chunkutils2_version) === 0 //lock in at ^0.2, optionally at a patch release
-		)){
+				version_compare($chunkutils2_version, $wantedVersionMin) < 0 ||
+				preg_match("/^" . preg_quote($wantedVersionLock, "/") . "\.\d+(?:-dev)?$/", $chunkutils2_version) === 0 //lock in at ^0.2, optionally at a patch release
+			)){
 			$messages[] = "chunkutils2 ^$wantedVersionMin is required, while you have $chunkutils2_version.";
 		}
 
@@ -204,7 +204,7 @@ namespace pocketmine {
 	-------------------------------------------------------------------------------------------
 
 JIT_WARNING
-);
+				);
 			}
 		}
 	}
@@ -236,9 +236,6 @@ JIT_WARNING
 		return null;
 	}
 
-	/**
-	 * @return void
-	 */
 	function server(){
 		if(count($messages = check_platform_dependencies()) > 0){
 			echo PHP_EOL;
@@ -326,7 +323,6 @@ JIT_WARNING
 		}
 		$pluginPath = realpath($pluginPath) . DIRECTORY_SEPARATOR;
 
-		//Logger has a dependency on timezone
 		Timezone::init();
 
 		$opts = getopt("", [BootstrapOptions::NO_WIZARD, BootstrapOptions::ENABLE_ANSI, BootstrapOptions::DISABLE_ANSI, BootstrapOptions::NO_LOG_FILE]);
@@ -357,10 +353,6 @@ JIT_WARNING
 					break;
 				}
 			}
-
-			/*
-			 * We now use the Composer autoloader, but this autoloader is still for loading plugins.
-			 */
 			$autoloader = new ThreadSafeClassLoader();
 			$autoloader->register(false);
 
@@ -370,7 +362,7 @@ JIT_WARNING
 
 			$killer = new ServerKiller(8);
 			$killer->start();
-			usleep(10000); //Fixes ServerKiller not being able to start on single-core machines
+			usleep(10000);
 
 			if(ThreadManager::getInstance()->stopAll() > 0){
 				$logger->debug("Some threads could not be stopped, performing a force-kill");
@@ -387,5 +379,5 @@ JIT_WARNING
 		exit($exitCode);
 	}
 
-	\pocketmine\server();
+	server();
 }

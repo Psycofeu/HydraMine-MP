@@ -55,12 +55,6 @@ class Cactus extends Transparent implements Ageable{
 		return SupportType::NONE;
 	}
 
-	public function onEntityInside(Entity $entity) : bool{
-		$ev = new EntityDamageByBlockEvent($this, $entity, EntityDamageEvent::CAUSE_CONTACT, 1);
-		$entity->attack($ev);
-		return true;
-	}
-
 	private function canBeSupportedAt(Block $block) : bool{
 		$supportBlock = $block->getSide(Facing::DOWN);
 		if(!$supportBlock->hasSameTypeId($this) && !$supportBlock->hasTypeTag(BlockTypeTags::SAND)){
@@ -94,27 +88,6 @@ class Cactus extends Transparent implements Ageable{
 		$height = 1;
 		while($height < self::MAX_HEIGHT && $this->getSide(Facing::DOWN, $height)->hasSameTypeId($this)){
 			$height++;
-		}
-
-		if($this->age === 9){
-			$canGrowFlower = true;
-			foreach(Facing::HORIZONTAL as $side){
-				if($up->getSide($side)->isSolid()){
-					$canGrowFlower = false;
-					break;
-				}
-			}
-
-			if($canGrowFlower){
-				$chance = $height >= self::MAX_HEIGHT ? 25 : 10;
-				if(mt_rand(1, 100) <= $chance){
-					if(BlockEventHelper::grow($up, VanillaBlocks::CACTUS_FLOWER(), null)){
-						$this->age = 0;
-						$world->setBlock($this->position, $this, update: false);
-					}
-					return;
-				}
-			}
 		}
 
 		if($this->age === self::MAX_AGE){

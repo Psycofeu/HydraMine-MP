@@ -169,7 +169,8 @@ class World implements ChunkManager{
 	public const DIFFICULTY_NORMAL = 2;
 	public const DIFFICULTY_HARD = 3;
 
-	public const DEFAULT_TICKED_BLOCKS_PER_SUBCHUNK_PER_TICK = 3;
+	public const DEFAULT_TICKED_BLOCKS_PER_SUBCHUNK_PER_TICK = 7;
+
 
 	//TODO: this could probably do with being a lot bigger
 	private const BLOCK_CACHE_SIZE_CAP = 2048;
@@ -412,8 +413,8 @@ class World implements ChunkManager{
 		return morton3d_encode(
 			$x & self::BLOCKHASH_XZ_MASK,
 			($shiftedY /* & self::BLOCKHASH_Y_MASK */) |
-				((($x >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_X_SHIFT) |
-				((($z >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_Z_SHIFT),
+			((($x >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_X_SHIFT) |
+			((($z >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_Z_SHIFT),
 			$z & self::BLOCKHASH_XZ_MASK
 		);
 	}
@@ -500,6 +501,7 @@ class World implements ChunkManager{
 		$generator = GeneratorManager::getInstance()->getGenerator($this->provider->getWorldData()->getGenerator()) ??
 			throw new AssumptionFailedError("WorldManager should already have checked that the generator exists");
 		$generator->validateGeneratorOptions($this->provider->getWorldData()->getGeneratorOptions());
+
 
 		$executorSetupParameters = new GeneratorExecutorSetupParameters(
 			worldMinY: $this->minY,
@@ -1013,7 +1015,7 @@ class World implements ChunkManager{
 		if(count($this->changedBlocks) > 0){
 			if(count($this->players) > 0){
 				foreach($this->changedBlocks as $index => $blocks){
-					if(count($blocks) === 0){ //blocks can be set normally and then later re-set with direct send
+					if(count($blocks) === 0){
 						continue;
 					}
 					World::getXZ($index, $chunkX, $chunkZ);
@@ -1383,7 +1385,6 @@ class World implements ChunkManager{
 	private function tickChunk(int $chunkX, int $chunkZ) : void{
 		$chunk = $this->getChunk($chunkX, $chunkZ);
 		if($chunk === null){
-			//the chunk may have been unloaded during a previous chunk's update (e.g. during BlockGrowEvent)
 			return;
 		}
 		foreach($this->getChunkEntities($chunkX, $chunkZ) as $entity){
@@ -1396,7 +1397,6 @@ class World implements ChunkManager{
 				$k = 0;
 				for($i = 0; $i < $this->tickedBlocksPerSubchunkPerTick; ++$i){
 					if(($i % 5) === 0){
-						//60 bits will be used by 5 blocks (12 bits each)
 						$k = mt_rand(0, (1 << 60) - 1);
 					}
 					$x = $k & SubChunk::COORD_MASK;
@@ -1852,26 +1852,7 @@ class World implements ChunkManager{
 		return 0; //TODO: this should probably throw instead (light not calculated yet)
 	}
 
-	public function updateAllLight(int $x, int $y, int $z) : void{
-		if(($chunk = $this->getChunk($x >> Chunk::COORD_BIT_SIZE, $z >> Chunk::COORD_BIT_SIZE)) === null || $chunk->isLightPopulated() !== true){
-			return;
-		}
-
-		$blockFactory = $this->blockStateRegistry;
-		$this->timings->doBlockSkyLightUpdates->startTiming();
-		if($this->skyLightUpdate === null){
-			$this->skyLightUpdate = new SkyLightUpdate(new SubChunkExplorer($this), $blockFactory->lightFilter, $blockFactory->blocksDirectSkyLight);
-		}
-		$this->skyLightUpdate->recalculateNode($x, $y, $z);
-		$this->timings->doBlockSkyLightUpdates->stopTiming();
-
-		$this->timings->doBlockLightUpdates->startTiming();
-		if($this->blockLightUpdate === null){
-			$this->blockLightUpdate = new BlockLightUpdate(new SubChunkExplorer($this), $blockFactory->lightFilter, $blockFactory->light);
-		}
-		$this->blockLightUpdate->recalculateNode($x, $y, $z);
-		$this->timings->doBlockLightUpdates->stopTiming();
-	}
+	public function updateAllLight(int $x, int $y, int $z) : void {}
 
 	/**
 	 * @phpstan-param \Closure(int $x, int $y, int $z) : int $lightGetter
@@ -1916,21 +1897,7 @@ class World implements ChunkManager{
 		return $this->getHighestAdjacentLight($x, $y, $z, $this->getBlockLightAt(...));
 	}
 
-	private function executeQueuedLightUpdates() : void{
-		if($this->blockLightUpdate !== null){
-			$this->timings->doBlockLightUpdates->startTiming();
-			$this->blockLightUpdate->execute();
-			$this->blockLightUpdate = null;
-			$this->timings->doBlockLightUpdates->stopTiming();
-		}
-
-		if($this->skyLightUpdate !== null){
-			$this->timings->doBlockSkyLightUpdates->startTiming();
-			$this->skyLightUpdate->execute();
-			$this->skyLightUpdate = null;
-			$this->timings->doBlockSkyLightUpdates->stopTiming();
-		}
-	}
+	private function executeQueuedLightUpdates() : void{}
 
 	public function isInWorld(int $x, int $y, int $z) : bool{
 		return (
@@ -2083,7 +2050,6 @@ class World implements ChunkManager{
 		}
 
 		if($update){
-			$this->updateAllLight($x, $y, $z);
 			$this->internalNotifyNeighbourBlockUpdate($x, $y, $z);
 		}
 
@@ -2271,10 +2237,10 @@ class World implements ChunkManager{
 			$ev = new PlayerInteractEvent($player, $item, $blockClicked, $clickVector, $face, PlayerInteractEvent::RIGHT_CLICK_BLOCK);
 			if($player->isSneakPressed()){
 				$ev->setUseItem(false);
-				$ev->setUseBlock($item->isNull()); //opening doors is still possible when sneaking if using an empty hand
+				$ev->setUseBlock($item->isNull());
 			}
 			if($player->isSpectator()){
-				$ev->cancel(); //set it to cancelled so plugins can bypass this
+				$ev->cancel();
 			}
 
 			$ev->call();

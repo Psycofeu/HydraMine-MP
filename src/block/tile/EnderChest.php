@@ -26,7 +26,6 @@ namespace pocketmine\block\tile;
 use pocketmine\nbt\tag\CompoundTag;
 
 class EnderChest extends Spawnable{
-
 	protected int $viewerCount = 0;
 
 	public function getViewerCount() : int{
@@ -34,10 +33,8 @@ class EnderChest extends Spawnable{
 	}
 
 	public function setViewerCount(int $viewerCount) : void{
-		if($viewerCount < 0){
-			throw new \InvalidArgumentException('Viewer count cannot be negative');
-		}
-		$this->viewerCount = $viewerCount;
+		$viewer = max(0, $viewerCount);
+		$this->viewerCount = $viewer;
 	}
 
 	public function readSaveData(CompoundTag $nbt) : void{

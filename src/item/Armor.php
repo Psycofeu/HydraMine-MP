@@ -38,7 +38,7 @@ use function mt_rand;
 
 class Armor extends Durable{
 
-	public const TAG_CUSTOM_COLOR = "customColor"; //TAG_Int
+	public const TAG_CUSTOM_COLOR = "customColor";
 
 	private ArmorTypeInfo $armorInfo;
 

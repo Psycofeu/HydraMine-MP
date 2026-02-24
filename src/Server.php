@@ -188,10 +188,10 @@ class Server{
 	public const BROADCAST_CHANNEL_USERS = "pocketmine.broadcast.user";
 
 	public const DEFAULT_SERVER_NAME = VersionInfo::NAME . " Server";
-	public const DEFAULT_MAX_PLAYERS = 20;
+	public const DEFAULT_MAX_PLAYERS = 200;
 	public const DEFAULT_PORT_IPV4 = 19132;
 	public const DEFAULT_PORT_IPV6 = 19133;
-	public const DEFAULT_MAX_VIEW_DISTANCE = 16;
+	public const DEFAULT_MAX_VIEW_DISTANCE = 6;
 
 	/**
 	 * Worlds, network, commands and most other things are polled this many times per second on average.
@@ -381,6 +381,7 @@ class Server{
 	public function getAllowedViewDistance(int $distance) : int{
 		return max(2, min($distance, $this->memoryManager->getViewDistance($this->getViewDistance())));
 	}
+
 
 	public function getIp() : string{
 		$str = $this->configGroup->getConfigString(ServerProperties::SERVER_IPV4);
@@ -809,6 +810,7 @@ class Server{
 			$this->dataPath = realpath($dataPath) . DIRECTORY_SEPARATOR;
 			$this->pluginPath = realpath($pluginPath) . DIRECTORY_SEPARATOR;
 
+
 			$this->logger->info("Loading server configuration");
 			$pocketmineYmlPath = Path::join($this->dataPath, "pocketmine.yml");
 			if(!file_exists($pocketmineYmlPath)){
@@ -822,14 +824,14 @@ class Server{
 			$this->configGroup = new ServerConfigGroup(
 				new Config($pocketmineYmlPath, Config::YAML, []),
 				new Config(Path::join($this->dataPath, "server.properties"), Config::PROPERTIES, [
-					ServerProperties::MOTD => self::DEFAULT_SERVER_NAME,
+					ServerProperties::MOTD => "Hydra",
 					ServerProperties::SERVER_PORT_IPV4 => self::DEFAULT_PORT_IPV4,
 					ServerProperties::SERVER_PORT_IPV6 => self::DEFAULT_PORT_IPV6,
 					ServerProperties::ENABLE_IPV6 => true,
 					ServerProperties::WHITELIST => false,
 					ServerProperties::MAX_PLAYERS => self::DEFAULT_MAX_PLAYERS,
-					ServerProperties::GAME_MODE => GameMode::SURVIVAL->name, //TODO: this probably shouldn't use the enum name directly
-					ServerProperties::FORCE_GAME_MODE => false,
+					ServerProperties::GAME_MODE => GameMode::SURVIVAL->name,
+					ServerProperties::FORCE_GAME_MODE => true,
 					ServerProperties::HARDCORE => false,
 					ServerProperties::PVP => true,
 					ServerProperties::DIFFICULTY => World::DIFFICULTY_NORMAL,
@@ -837,11 +839,11 @@ class Server{
 					ServerProperties::DEFAULT_WORLD_NAME => "world",
 					ServerProperties::DEFAULT_WORLD_SEED => "",
 					ServerProperties::DEFAULT_WORLD_GENERATOR => "DEFAULT",
-					ServerProperties::ENABLE_QUERY => true,
+					ServerProperties::ENABLE_QUERY => false,
 					ServerProperties::AUTO_SAVE => true,
 					ServerProperties::VIEW_DISTANCE => self::DEFAULT_MAX_VIEW_DISTANCE,
 					ServerProperties::XBOX_AUTH => true,
-					ServerProperties::LANGUAGE => "eng"
+					ServerProperties::LANGUAGE => "fra"
 				])
 			);
 
@@ -975,7 +977,7 @@ class Server{
 
 			$this->maxPlayers = $this->configGroup->getConfigInt(ServerProperties::MAX_PLAYERS, self::DEFAULT_MAX_PLAYERS);
 
-			$this->onlineMode = $this->configGroup->getConfigBool(ServerProperties::XBOX_AUTH, true);
+			$this->onlineMode = false;
 			if($this->onlineMode){
 				$this->logger->info($this->language->translate(KnownTranslationFactory::pocketmine_server_auth_enabled()));
 			}else{
@@ -1092,31 +1094,10 @@ class Server{
 
 			$this->configGroup->save();
 
-			$this->logger->info($this->language->translate(KnownTranslationFactory::pocketmine_server_defaultGameMode($this->getGamemode()->getTranslatableName())));
-			$highlight = TextFormat::AQUA;
-			$reset = TextFormat::RESET;
-			$github = VersionInfo::GITHUB_URL;
-			$splash = "\n\n";
-			foreach([
-				KnownTranslationFactory::pocketmine_server_url_discord("{$highlight}https://discord.pmmp.io{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_docs("{$highlight}https://doc.pmmp.io{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_sourceCode("{$highlight}{$github}{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_freePlugins("{$highlight}https://poggit.pmmp.io/plugins{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_donations("{$highlight}https://patreon.com/pocketminemp{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_translations("{$highlight}https://translate.pocketmine.net{$reset}"),
-				KnownTranslationFactory::pocketmine_server_url_bugReporting("{$highlight}{$github}/issues{$reset}")
-			] as $link){
-				$splash .= "- " . $this->language->translate($link) . "\n";
-			}
-			$this->logger->info($splash);
-
-			$this->logger->info($this->language->translate(KnownTranslationFactory::pocketmine_server_startFinished(strval(round(microtime(true) - $this->startTime, 3)))));
-
 			$forwarder = new BroadcastLoggerForwarder($this, $this->logger, $this->language);
 			$this->subscribeToBroadcastChannel(self::BROADCAST_CHANNEL_ADMINISTRATIVE, $forwarder);
 			$this->subscribeToBroadcastChannel(self::BROADCAST_CHANNEL_USERS, $forwarder);
 
-			//TODO: move console parts to a separate component
 			if($this->configGroup->getPropertyBool(Yml::CONSOLE_ENABLE_INPUT, true)){
 				$this->console = new ConsoleReaderChildProcessDaemon($this->logger);
 			}
@@ -1500,16 +1481,6 @@ class Server{
 		if($this->isRunning){
 			$this->isRunning = false;
 			$this->signalHandler->unregister();
-
-			if(TimingsHandler::isEnabled()){
-				TimingsHandler::createReportFile(Path::join($this->getDataPath(), "timings"))->onCompletion(
-					function(string $timingsFile) : void{
-						$this->logger->info($this->language->translate(KnownTranslationFactory::pocketmine_command_timings_timingsWrite($timingsFile)));
-						TimingsHandler::setEnabled(false);
-					},
-					fn() => $this->logger->error("Failed to create timings report file")
-				);
-			}
 		}
 	}
 
