@@ -185,7 +185,7 @@ class Chunk{
 		$this->lightPopulated = $value;
 	}
 
-	public function isPopulated() : bool{
+	public function isPopulated() : bool {
 		return $this->terrainPopulated;
 	}
 

@@ -169,7 +169,7 @@ class World implements ChunkManager{
 	public const DIFFICULTY_NORMAL = 2;
 	public const DIFFICULTY_HARD = 3;
 
-	public const DEFAULT_TICKED_BLOCKS_PER_SUBCHUNK_PER_TICK = 7;
+	public const DEFAULT_TICKED_BLOCKS_PER_SUBCHUNK_PER_TICK = 3;
 
 
 	//TODO: this could probably do with being a lot bigger
@@ -1312,7 +1312,7 @@ class World implements ChunkManager{
 				if($chunk === null || !$chunk->isPopulated()){
 					return $cache[$chunkHash] = false;
 				}
-				
+
 				$cache[$chunkHash] = true;
 			}
 		}
