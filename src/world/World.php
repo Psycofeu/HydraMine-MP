@@ -1789,10 +1789,7 @@ class World implements ChunkManager{
 	 * This is not affected by weather or time of day.
 	 */
 	public function getPotentialLight(Vector3 $pos) : int{
-		$floorX = $pos->getFloorX();
-		$floorY = $pos->getFloorY();
-		$floorZ = $pos->getFloorZ();
-		return $this->getPotentialLightAt($floorX, $floorY, $floorZ);
+		return 15;
 	}
 
 	/**
@@ -1800,7 +1797,7 @@ class World implements ChunkManager{
 	 * This is not affected by weather or time of day.
 	 */
 	public function getPotentialLightAt(int $x, int $y, int $z) : int{
-		return max($this->getPotentialBlockSkyLightAt($x, $y, $z), $this->getBlockLightAt($x, $y, $z));
+		return 15;
 	}
 
 	/**
@@ -1818,13 +1815,7 @@ class World implements ChunkManager{
 	 * @return int 0-15
 	 */
 	public function getPotentialBlockSkyLightAt(int $x, int $y, int $z) : int{
-		if(!$this->isInWorld($x, $y, $z)){
-			return $y >= self::Y_MAX ? 15 : 0;
-		}
-		if(($chunk = $this->getChunk($x >> Chunk::COORD_BIT_SIZE, $z >> Chunk::COORD_BIT_SIZE)) !== null && $chunk->isLightPopulated() === true){
-			return $chunk->getSubChunk($y >> Chunk::COORD_BIT_SIZE)->getBlockSkyLightArray()->get($x & SubChunk::COORD_MASK, $y & SubChunk::COORD_MASK, $z & SubChunk::COORD_MASK);
-		}
-		return 0; //TODO: this should probably throw instead (light not calculated yet)
+		return 15;
 	}
 
 	/**
@@ -1847,9 +1838,9 @@ class World implements ChunkManager{
 			return 0;
 		}
 		if(($chunk = $this->getChunk($x >> Chunk::COORD_BIT_SIZE, $z >> Chunk::COORD_BIT_SIZE)) !== null && $chunk->isLightPopulated() === true){
-			return $chunk->getSubChunk($y >> Chunk::COORD_BIT_SIZE)->getBlockLightArray()->get($x & SubChunk::COORD_MASK, $y & SubChunk::COORD_MASK, $z & SubChunk::COORD_MASK);
+			return 15;
 		}
-		return 0; //TODO: this should probably throw instead (light not calculated yet)
+		return 0;
 	}
 
 	public function updateAllLight(int $x, int $y, int $z) : void {}
@@ -1858,28 +1849,14 @@ class World implements ChunkManager{
 	 * @phpstan-param \Closure(int $x, int $y, int $z) : int $lightGetter
 	 */
 	private function getHighestAdjacentLight(int $x, int $y, int $z, \Closure $lightGetter) : int{
-		$max = 0;
-		foreach(Facing::OFFSET as [$offsetX, $offsetY, $offsetZ]){
-			$x1 = $x + $offsetX;
-			$y1 = $y + $offsetY;
-			$z1 = $z + $offsetZ;
-			if(
-				!$this->isInWorld($x1, $y1, $z1) ||
-				($chunk = $this->getChunk($x1 >> Chunk::COORD_BIT_SIZE, $z1 >> Chunk::COORD_BIT_SIZE)) === null ||
-				$chunk->isLightPopulated() !== true
-			){
-				continue;
-			}
-			$max = max($max, $lightGetter($x1, $y1, $z1));
-		}
-		return $max;
+		return 15;
 	}
 
 	/**
 	 * Returns the highest potential level of sky light in the positions adjacent to the specified block coordinates.
 	 */
 	public function getHighestAdjacentPotentialBlockSkyLight(int $x, int $y, int $z) : int{
-		return $this->getHighestAdjacentLight($x, $y, $z, $this->getPotentialBlockSkyLightAt(...));
+		return 15;
 	}
 
 	/**
@@ -1887,17 +1864,17 @@ class World implements ChunkManager{
 	 * the world's current time of day and weather conditions.
 	 */
 	public function getHighestAdjacentRealBlockSkyLight(int $x, int $y, int $z) : int{
-		return $this->getHighestAdjacentPotentialBlockSkyLight($x, $y, $z) - $this->skyLightReduction;
+		return 15;
 	}
 
 	/**
 	 * Returns the highest block light level available in the positions adjacent to the specified block coordinates.
 	 */
 	public function getHighestAdjacentBlockLight(int $x, int $y, int $z) : int{
-		return $this->getHighestAdjacentLight($x, $y, $z, $this->getBlockLightAt(...));
+		return 15;
 	}
 
-	private function executeQueuedLightUpdates() : void{}
+	private function executeQueuedLightUpdates() : void {}
 
 	public function isInWorld(int $x, int $y, int $z) : bool{
 		return (

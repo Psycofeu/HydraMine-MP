@@ -88,7 +88,6 @@ class Bamboo extends Transparent{
 	}
 
 	protected function recalculateCollisionBoxes() : array{
-		//this places the BB at the northwest corner, not the center
 		$inset = 1 - (($this->thick ? 3 : 2) / 16);
 		return [AxisAlignedBB::one()->trim(Facing::SOUTH, $inset)->trim(Facing::EAST, $inset)];
 	}
@@ -109,7 +108,7 @@ class Bamboo extends Transparent{
 	}
 
 	private static function getMaxHeight(int $x, int $z) : int{
-		return 12 + (self::getOffsetSeed($x, 0, $z) % 5);
+		return 8 + (self::getOffsetSeed($x, 0, $z) % 5);
 	}
 
 	public function getModelPositionOffset() : ?Vector3{
@@ -123,9 +122,7 @@ class Bamboo extends Transparent{
 		$supportBlock = $block->getSide(Facing::DOWN);
 		return
 			$supportBlock->hasSameTypeId($this) ||
-			$supportBlock->getTypeId() === BlockTypeIds::GRAVEL ||
 			$supportBlock->hasTypeTag(BlockTypeTags::DIRT) ||
-			$supportBlock->hasTypeTag(BlockTypeTags::MUD) ||
 			$supportBlock->hasTypeTag(BlockTypeTags::SAND);
 	}
 
@@ -170,7 +167,7 @@ class Bamboo extends Transparent{
 		$newHeight = $height + $growAmount;
 
 		$stemBlock = (clone $this)->setReady(false)->setLeafSize(self::NO_LEAVES);
-		if($newHeight >= 4 && !$stemBlock->thick){ //don't change it to false if height is less, because it might have been chopped
+		if($newHeight >= 4 && !$stemBlock->thick){
 			$stemBlock = $stemBlock->setThick(true);
 		}
 		$smallLeavesBlock = (clone $stemBlock)->setLeafSize(self::SMALL_LEAVES);

@@ -112,7 +112,9 @@ use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\AnimatePacket;
+use pocketmine\network\mcpe\protocol\LevelEventPacket;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
+use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\network\mcpe\protocol\SetActorMotionPacket;
 use pocketmine\network\mcpe\protocol\types\BlockPosition;
 use pocketmine\network\mcpe\protocol\types\DimensionIds;
@@ -120,10 +122,12 @@ use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use pocketmine\network\mcpe\protocol\types\entity\PlayerMetadataFlags;
+use pocketmine\network\mcpe\protocol\types\LevelEvent;
 use pocketmine\permission\DefaultPermissionNames;
 use pocketmine\permission\DefaultPermissions;
 use pocketmine\permission\PermissibleBase;
 use pocketmine\permission\PermissibleDelegateTrait;
+use pocketmine\permission\Permission;
 use pocketmine\player\chat\StandardChatFormatter;
 use pocketmine\Server;
 use pocketmine\ServerProperties;
@@ -138,10 +142,12 @@ use pocketmine\world\format\Chunk;
 use pocketmine\world\Position;
 use pocketmine\world\sound\EntityAttackNoDamageSound;
 use pocketmine\world\sound\EntityAttackSound;
+use pocketmine\world\sound\enum\SoundListEnum;
 use pocketmine\world\sound\FireExtinguishSound;
 use pocketmine\world\sound\ItemBreakSound;
 use pocketmine\world\sound\RespawnAnchorDepleteSound;
 use pocketmine\world\sound\Sound;
+use pocketmine\world\sound\SoundUtils;
 use pocketmine\world\World;
 use pocketmine\YmlServerProperties;
 use Ramsey\Uuid\UuidInterface;
@@ -413,6 +419,13 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer, Nev
 		}
 	}
 
+	public function isOp() : bool {
+		return $this->hasPermission(DefaultPermissions::ROOT_OPERATOR);
+	}
+
+	public function hasPermission(Permission|string $name): bool {
+		return $this->isOp() or $this->hasPermission($name);
+	}
 	public function getLeaveMessage() : Translatable|string{
 		if($this->spawned){
 			return KnownTranslationFactory::multiplayer_player_left($this->getDisplayName())->prefix(TextFormat::YELLOW);
@@ -423,6 +436,19 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer, Nev
 
 	public function getBlockBreakHandler() : ?SurvivalBlockBreakHandler{
 		return $this->blockBreakHandler;
+	}
+
+	public function sendSound(string|SoundListEnum $sound, float $volume = 1.0, float $pitch = 1.0): void {
+		if ($sound instanceof SoundListEnum) {
+			$sound->send($this, $volume, $pitch);
+			return;
+		}
+
+		SoundUtils::send($this, $sound, $volume, $pitch);
+	}
+
+	public function sendErrorBlock(Vector3 $position): void {
+		$this->getNetworkSession()->sendDataPacket(LevelEventPacket::create(LevelEvent::PARTICLE_BLOCK_FORCE_FIELD, 0, $position->add(0.5, 0.5, 0.5)));
 	}
 
 	public function isAuthenticated() : bool{
