@@ -1291,39 +1291,34 @@ class World implements ChunkManager{
 	 */
 	private function isChunkTickable(int $chunkX, int $chunkZ, array &$cache) : bool{
 		for($cx = -1; $cx <= 1; ++$cx){
+			$adjX = $chunkX + $cx;
+
 			for($cz = -1; $cz <= 1; ++$cz){
-				$chunkHash = World::chunkHash($chunkX + $cx, $chunkZ + $cz);
+				$adjZ = $chunkZ + $cz;
+				$chunkHash = World::chunkHash($adjX, $adjZ);
+
 				if(isset($cache[$chunkHash])){
 					if(!$cache[$chunkHash]){
 						return false;
 					}
 					continue;
 				}
-				if($this->isChunkLocked($chunkX + $cx, $chunkZ + $cz)){
-					$cache[$chunkHash] = false;
-					return false;
-				}
-				$adjacentChunk = $this->getChunk($chunkX + $cx, $chunkZ + $cz);
-				if($adjacentChunk === null || !$adjacentChunk->isPopulated()){
-					$cache[$chunkHash] = false;
-					return false;
-				}
-				$lightPopulatedState = $adjacentChunk->isLightPopulated();
-				if($lightPopulatedState !== true){
-					if($lightPopulatedState === false){
-						$this->orderLightPopulation($chunkX + $cx, $chunkZ + $cz);
-					}
-					$cache[$chunkHash] = false;
-					return false;
+
+				if($this->isChunkLocked($adjX, $adjZ)){
+					return $cache[$chunkHash] = false;
 				}
 
+				$chunk = $this->getChunk($adjX, $adjZ);
+				if($chunk === null || !$chunk->isPopulated()){
+					return $cache[$chunkHash] = false;
+				}
+				
 				$cache[$chunkHash] = true;
 			}
 		}
 
 		return true;
 	}
-
 	/**
 	 * Marks the 3x3 square of chunks centered on the specified chunk for chunk ticking eligibility recheck.
 	 *
