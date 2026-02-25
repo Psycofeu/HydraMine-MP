@@ -423,9 +423,6 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer, Nev
 		return $this->hasPermission(DefaultPermissions::ROOT_OPERATOR);
 	}
 
-	public function hasPermission(Permission|string $name): bool {
-		return $this->isOp() or $this->hasPermission($name);
-	}
 	public function getLeaveMessage() : Translatable|string{
 		if($this->spawned){
 			return KnownTranslationFactory::multiplayer_player_left($this->getDisplayName())->prefix(TextFormat::YELLOW);
